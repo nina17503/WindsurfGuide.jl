@@ -71,7 +71,8 @@ using CSV
     end
 
     @testset "final recommendations" begin
-        df_test = WindsurfGuide.get_recs_test(72, 5, "intermediate", 270)
+        wind_data = CSV.read(joinpath(WindsurfGuide.data_dir, "test_wind_data.csv"), DataFrame)
+        df_test = WindsurfGuide.get_recs(72, 5, "intermediate", 270; wind_data)
 
         @test occursin("very good", df_test."Recommendation"[53])
         @test occursin("gusts are too strong", df_test."Recommendation"[52])

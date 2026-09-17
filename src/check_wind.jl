@@ -223,35 +223,7 @@ check_forecast(bodyweight, sail_size, level, city, coast)
     Returns:
         A DataFrame containing all the recommendations per forecast time.
 """
-function check_forecast(bodyweight, sail_size, level, city, coast)
-
-    df_wind = collect_wind_data(city)
-
-    guidelines, lb_wind, ub_wind, lb_sail, ub_sail = check_bodyweight(bodyweight, sail_size)
-
-    df_results = DataFrame()
-    df_results[!, :TIME] = df_wind.TIME
-    df_results[!, :Windspeed] = df_wind.windspeed_10m
-
-    if !(level in ["beginner", "intermediate", "advanced"])
-        error("Please enter a valid skill level: beginner, intermediate, or advanced")
-    end
-
-    results_direction = check_direction(df_wind, coast, level)
-    results_gusts = check_gusts(df_wind, level)
-    results_windspeed = check_windspeed(df_wind, guidelines, level, lb_wind, ub_wind, lb_sail, ub_sail)
-
-    df_results[!, "windspeed_recs"] = results_windspeed
-    df_results[!, "direction_recs"] = results_direction
-    df_results[!, "gusts"] = results_gusts
-
-    return df_results
-
-end
-
-function check_forecast_test(bodyweight, sail_size, level, coast)
-
-    df_wind = CSV.read(joinpath(data_dir, "test_wind_data.csv"), DataFrame)
+function check_forecast(bodyweight, sail_size, level, city, coast; wind_data = collect_wind_data(city))
 
     guidelines, lb_wind, ub_wind, lb_sail, ub_sail = check_bodyweight(bodyweight, sail_size)
 
@@ -291,35 +263,9 @@ get_recs(bodyweight, sail_size, level, city, coast)
     Returns:
         A DataFrame containing the forecast time and the overall recommendations.
 """
-function get_recs(bodyweight, sail_size, level, city, coast)
+function get_recs(bodyweight, sail_size, level, city, coast; wind_data = collect_wind_data(city))
 
-    df_results = check_forecast(bodyweight, sail_size, level, city,  coast)
-    df_recs = DataFrame()
-    df_recs[!, :Time] = df_results.TIME
-    rec = String[]
-    
-    for i in 1:size(df_results, 1)
-        if occursin("too strong", df_results."windspeed_recs"[i]) ||
-            occursin("too low", df_results."windspeed_recs"[i])
-            push!(rec, df_results."windspeed_recs"[i])
-        elseif occursin("Offshore", df_results."direction_recs"[i])
-            push!(rec, df_results."direction_recs"[i])
-        elseif occursin("too strong for your skill level", df_results."gusts"[i])
-            push!(rec, df_results."gusts"[i])
-        else
-            push!(rec, df_results."windspeed_recs"[i])
-        end
-    end
-
-    df_recs[!, :Recommendation] = rec
-
-    return df_recs
-
-end
-
-function get_recs_test(bodyweight, sail_size, level, coast)
-
-    df_results = check_forecast_test(bodyweight, sail_size, level, coast)
+    df_results = check_forecast(bodyweight, sail_size, level, city,  coast; wind_data)
     df_recs = DataFrame()
     df_recs[!, :Time] = df_results.TIME
     rec = String[]
